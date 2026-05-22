@@ -20,7 +20,7 @@
 ## 起動手順
 
 1. このリポジトリを GitHub にプッシュする（またはテンプレートとして利用する）
-2. ローカル環境に `OPENCODE_API_KEY` を設定しておく（Codespaces 作成時に devcontainer へ注入されます）
+2. リポジトリの **Settings** → **Secrets and variables** → **Codespaces** で、シークレット `OPENCODE_API_KEY` を追加する
 3. GitHub 上で **Code** → **Codespaces** → **Create codespace on main** を選択
 4. コンテナのビルドと `setup.sh` の実行が完了するまで待つ（初回は数分かかることがあります）
 5. ポート **8787**（Wrangler Dev Server）が自動転送される
@@ -101,14 +101,21 @@ wrangler login --no-browser
 
 表示される URL をローカル PC のブラウザで開き、表示された認証コードをターミナルに貼り付けます。
 
-### 環境変数
+### 環境変数・シークレット
 
 | 変数 | 設定場所 | 説明 |
 |------|----------|------|
-| `OPENCODE_API_KEY` | ローカル環境（`localEnv` で注入） | OpenCode API キー |
+| `OPENCODE_API_KEY` | リポジトリの **Codespaces シークレット** | OpenCode API キー（`devcontainer.json` の `secrets` と同名） |
 | `OPENCODE_BASE_URL` | `devcontainer.json` の `containerEnv` | OpenCode 互換 API のベース URL（後から設定可） |
 
-`OPENCODE_API_KEY` はリポジトリにコミットしないでください。GitHub Codespaces の場合は、User secrets や devcontainer の `remoteEnv` など、安全な方法で渡すことを推奨します。
+#### `OPENCODE_API_KEY` の登録手順
+
+1. GitHub リポジトリで **Settings** → **Secrets and variables** → **Codespaces** を開く
+2. **New repository secret** をクリック
+3. Name に `OPENCODE_API_KEY`、Value に API キーを入力して保存
+4. Codespace を作成または Rebuild する
+
+`devcontainer.json` の `remoteEnv` が `${localEnv:OPENCODE_API_KEY}` 経由でコンテナへ渡します。キーをリポジトリにコミットしないでください。
 
 ### 初回セットアップ
 

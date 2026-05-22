@@ -5,9 +5,17 @@
       "version": "22"
     }
   },
+  "secrets": {
+    "OPENCODE_API_KEY": {
+      "description": "OpenCode API キー。リポジトリの Codespaces シークレットに同名で登録してください。",
+      "documentationUrl": "https://opencode.ai/docs"
+    }
+  },
   "postCreateCommand": ".devcontainer/setup.sh",
   "containerEnv": {
-    "OPENCODE_BASE_URL": "",
+    "OPENCODE_BASE_URL": ""
+  },
+  "remoteEnv": {
     "OPENCODE_API_KEY": "${localEnv:OPENCODE_API_KEY}"
   },
   "customizations": {
