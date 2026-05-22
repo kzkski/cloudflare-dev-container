@@ -1,11 +1,56 @@
 #!/usr/bin/env bash
 set -e
 
+reload_path() {
+  # OpenCode installer adds ~/.opencode/bin via .bashrc; apply it in this shell too.
+  if [[ -d "${HOME}/.opencode/bin" ]]; then
+    export PATH="${HOME}/.opencode/bin:${PATH}"
+  fi
+
+  # npm global binaries (e.g. wrangler)
+  if command -v npm >/dev/null 2>&1; then
+    local npm_global_bin
+    npm_global_bin="$(npm prefix -g 2>/dev/null)/bin"
+    if [[ -d "${npm_global_bin}" ]]; then
+      export PATH="${npm_global_bin}:${PATH}"
+    fi
+  fi
+
+  if [[ -f "${HOME}/.bashrc" ]]; then
+    set +e
+    # shellcheck source=/dev/null
+    source "${HOME}/.bashrc"
+    set -e
+  fi
+}
+
+persist_path() {
+  local npm_prefix=""
+  if command -v npm >/dev/null 2>&1; then
+    npm_prefix="$(npm prefix -g 2>/dev/null || true)"
+  fi
+
+  sudo tee /etc/profile.d/99-devcontainer-path.sh >/dev/null <<EOF
+# Added by .devcontainer/setup.sh — available in all login shells
+export PATH="\${HOME}/.opencode/bin:\${PATH}"
+EOF
+
+  if [[ -n "${npm_prefix}" ]]; then
+    sudo tee -a /etc/profile.d/99-devcontainer-path.sh >/dev/null <<EOF
+export PATH="${npm_prefix}/bin:\${PATH}"
+EOF
+  fi
+}
+
 echo "==> Installing OpenCode..."
 curl -fsSL https://opencode.ai/install | bash
+echo "==> Reloading PATH (OpenCode)..."
+reload_path
 
 echo "==> Installing Wrangler (global)..."
 npm install -g wrangler
+echo "==> Reloading PATH (Wrangler)..."
+reload_path
 
 echo "==> Installing cloudflared..."
 CLOUDFLARED_DEB="/tmp/cloudflared-linux-amd64.deb"
@@ -35,6 +80,10 @@ cat > "${HOME}/.config/opencode/config.json" <<EOF
   }
 }
 EOF
+
+echo "==> Persisting PATH for new shells..."
+persist_path
+reload_path
 
 echo ""
 echo "Setup complete! Tools installed:"
