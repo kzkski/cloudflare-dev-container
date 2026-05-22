@@ -118,4 +118,4 @@ wrangler login --no-browser
 .devcontainer/setup.sh
 ```
 
-`setup.sh` 実行時に `.bashrc` を読み込み、OpenCode インストーラが追加した PATH を反映します。新しいターミナルでは通常 `opencode` だけで起動できます。PATH が通らない場合は `source ~/.bashrc` するか、`~/.opencode/bin/opencode` を使ってください。
+`setup.sh` 完了後は **新しいターミナルを開いて** から `opencode` や `wrangler` を使ってください（OpenCode インストーラが `.bashrc` に追加した PATH はログイン時に読み込まれます）。

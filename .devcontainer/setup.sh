@@ -4,14 +4,6 @@ set -e
 echo "==> Installing OpenCode..."
 curl -fsSL https://opencode.ai/install | bash
 
-if [[ -f "${HOME}/.bashrc" ]]; then
-  echo "==> Reloading shell environment (.bashrc)..."
-  set +e
-  # shellcheck source=/dev/null
-  . "${HOME}/.bashrc"
-  set -e
-fi
-
 echo "==> Installing Wrangler (global)..."
 npm install -g wrangler
 
@@ -44,13 +36,6 @@ cat > "${HOME}/.config/opencode/config.json" <<EOF
 }
 EOF
 
-if [[ -f "${HOME}/.bashrc" ]]; then
-  set +e
-  # shellcheck source=/dev/null
-  . "${HOME}/.bashrc"
-  set -e
-fi
-
 echo ""
 echo "Setup complete! Tools installed:"
 echo "  - OpenCode:  $(command -v opencode 2>/dev/null || echo "${HOME}/.opencode/bin/opencode")"
@@ -60,5 +45,6 @@ echo ""
 echo "Next steps:"
 echo "  1. Set OPENCODE_BASE_URL in devcontainer.json (or Codespaces secrets)"
 echo "  2. Set OPENCODE_API_KEY in your local environment before creating the Codespace"
-echo "  3. Run: wrangler login --no-browser"
-echo "  4. Run: opencode"
+echo "  3. Open a new terminal (PATH is applied via .bashrc on login)"
+echo "  4. Run: wrangler login --no-browser"
+echo "  5. Run: opencode"
