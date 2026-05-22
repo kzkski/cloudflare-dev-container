@@ -5,7 +5,7 @@ echo "==> Installing OpenCode..."
 curl -fsSL https://opencode.ai/install | bash
 
 echo "==> Installing OpenCode skills..."
-# -g: ~/.config/opencode/skills/<name>/SKILL.md（-g なしだと .agents/skills/ がネストされ OpenCode が見つけない）
+# グローバルインストール先: ~/.agents/skills/<name>/SKILL.md（OpenCode が読み込む）
 npx --yes skills add cloudflare/skills -a opencode -g -y
 npx --yes skills add yusukebe/hono-skill -a opencode -g -y
 
