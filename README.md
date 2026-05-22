@@ -11,6 +11,7 @@
 | ツール | 用途 |
 |--------|------|
 | **OpenCode** | AI コーディングアシスタント（ターミナル） |
+| **OpenCode Skills** | `cloudflare/skills`・`yusukebe/hono-skill`（セットアップ時に自動導入） |
 | **Wrangler** | Cloudflare Workers の開発・デプロイ CLI |
 | **cloudflared** | Cloudflare Tunnel（ローカル公開・接続） |
 | **Hono** | 軽量 Web フレームワーク（プロジェクト作成時に導入） |
@@ -40,6 +41,11 @@ opencode auth list
 ```
 
 設定ファイルは `~/.config/opencode/config.json` に生成されます。`OPENCODE_BASE_URL` と `OPENCODE_API_KEY` が devcontainer の環境変数から反映されます。
+
+Cloudflare / Hono 向けの Skills は `setup.sh` 実行時に `~/.config/opencode/skills/` へインストール済みです。
+
+- [cloudflare/skills](https://github.com/cloudflare/skills)
+- [yusukebe/hono-skill](https://github.com/yusukebe/hono-skill)
 
 ### Wrangler（ローカル開発）
 

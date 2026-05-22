@@ -4,6 +4,11 @@ set -e
 echo "==> Installing OpenCode..."
 curl -fsSL https://opencode.ai/install | bash
 
+echo "==> Installing OpenCode skills..."
+mkdir -p "${HOME}/.config/opencode/skills"
+npx --yes skills add cloudflare/skills -a opencode -y
+npx --yes skills add yusukebe/hono-skill -a opencode -y
+
 echo "==> Installing Wrangler (global)..."
 npm install -g wrangler
 
