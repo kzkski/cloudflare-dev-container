@@ -5,9 +5,9 @@ echo "==> Installing OpenCode..."
 curl -fsSL https://opencode.ai/install | bash
 
 echo "==> Installing OpenCode skills..."
-mkdir -p "${HOME}/.config/opencode/skills"
-npx --yes skills add cloudflare/skills -a opencode -y
-npx --yes skills add yusukebe/hono-skill -a opencode -y
+# -g: ~/.config/opencode/skills/<name>/SKILL.md（-g なしだと .agents/skills/ がネストされ OpenCode が見つけない）
+npx --yes skills add cloudflare/skills -a opencode -g -y
+npx --yes skills add yusukebe/hono-skill -a opencode -g -y
 
 echo "==> Installing Wrangler (global)..."
 npm install -g wrangler

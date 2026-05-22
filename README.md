@@ -42,7 +42,13 @@ opencode auth list
 
 設定ファイルは `~/.config/opencode/config.json` に生成されます。`OPENCODE_BASE_URL` と `OPENCODE_API_KEY` が devcontainer の環境変数から反映されます。
 
-Cloudflare / Hono 向けの Skills は `setup.sh` 実行時に `~/.config/opencode/skills/` へインストール済みです。
+Cloudflare / Hono 向けの Skills は `setup.sh` 実行時にグローバルインストール（`-g`）され、次の形式で配置されます。
+
+```
+~/.config/opencode/skills/<skill-name>/SKILL.md
+```
+
+例: `~/.config/opencode/skills/wrangler/SKILL.md`
 
 - [cloudflare/skills](https://github.com/cloudflare/skills)
 - [yusukebe/hono-skill](https://github.com/yusukebe/hono-skill)
