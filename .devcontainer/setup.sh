@@ -2,7 +2,7 @@
 set -e
 
 CKAN_MCP_BASE_URL="${CKAN_MCP_BASE_URL:-https://ckan-mcp-worker.kzkski.workers.dev}"
-CKAN_MCP_SSE_URL="${CKAN_MCP_BASE_URL%/}/sse"
+CKAN_MCP_REMOTE_URL="${CKAN_MCP_BASE_URL%/}/mcp"
 
 echo "==> Installing OpenCode..."
 curl -fsSL https://opencode.ai/install | bash
@@ -45,7 +45,7 @@ cat > "${HOME}/.config/opencode/opencode.json" <<EOF
   "mcp": {
     "ckan-open-data": {
       "type": "remote",
-      "url": "${CKAN_MCP_SSE_URL}",
+      "url": "${CKAN_MCP_REMOTE_URL}",
       "enabled": true,
       "timeout": 120000
     }
@@ -58,7 +58,7 @@ echo "Setup complete! Tools installed:"
 echo "  - OpenCode:  $(command -v opencode 2>/dev/null || echo "${HOME}/.opencode/bin/opencode")"
 echo "  - Wrangler:  $(command -v wrangler 2>/dev/null || echo 'installed')"
 echo "  - cloudflared: $(cloudflared --version 2>/dev/null || echo 'installed')"
-echo "  - ckan-open-data MCP (remote SSE): ${CKAN_MCP_SSE_URL}"
+echo "  - ckan-open-data MCP (remote /mcp): ${CKAN_MCP_REMOTE_URL}"
 echo ""
 echo "Next steps:"
 echo "  1. Set OPENCODE_BASE_URL in devcontainer.json (or Codespaces secrets)"
