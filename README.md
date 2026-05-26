@@ -12,7 +12,7 @@
 |--------|------|
 | **OpenCode** | AI コーディングアシスタント（ターミナル） |
 | **OpenCode Skills** | `cloudflare/skills`・`yusukebe/hono-skill`（セットアップ時に自動導入） |
-| **ckan-open-data MCP** | 日本の CKAN オープンデータ（仙台市 / G空間 / BODIK）— 本番 Worker 経由 |
+| **ckan-open-data MCP** | 日本の CKAN オープンデータ（仙台市 / G空間 / BODIK）— 本番 Worker の **リモート SSE**（`/sse`） |
 | **Wrangler** | Cloudflare Workers の開発・デプロイ CLI |
 | **cloudflared** | Cloudflare Tunnel（ローカル公開・接続） |
 | **Hono** | 軽量 Web フレームワーク（プロジェクト作成時に導入） |
@@ -43,7 +43,7 @@ opencode auth list
 
 設定ファイルは `~/.config/opencode/opencode.json` に生成されます。`OPENCODE_BASE_URL` と `OPENCODE_API_KEY` が devcontainer の環境変数から反映されます。
 
-**ckan-open-data MCP** はセットアップ時に登録されます（stdio ブリッジ → 本番 Worker `https://ckan-mcp-worker.kzkski.workers.dev`）。`opencode` 起動後、MCP 一覧で `ckan-open-data` が有効か確認してください。
+**ckan-open-data MCP** はセットアップ時に `type: "remote"` で登録されます（本番 Worker の SSE エンドポイント `https://ckan-mcp-worker.kzkski.workers.dev/sse`）。OpenCode のリモート MCP は **SSE のみ**対応のため、stdio ブリッジや `POST /mcp` は使いません。`opencode` 起動後、MCP 一覧で `ckan-open-data` が有効か確認してください。
 
 利用例（エージェントへの指示）:
 
@@ -130,7 +130,7 @@ wrangler login --no-browser
 |------|----------|------|
 | `OPENCODE_API_KEY` | リポジトリの **Codespaces シークレット** | OpenCode API キー（`devcontainer.json` の `secrets` と同名） |
 | `OPENCODE_BASE_URL` | `devcontainer.json` の `containerEnv` | OpenCode 互換 API のベース URL（後から設定可） |
-| `CKAN_MCP_BASE_URL` | `devcontainer.json` の `containerEnv` | ckan-open-data MCP が接続する Worker URL（デフォルト: 本番 kzkski） |
+| `CKAN_MCP_BASE_URL` | `devcontainer.json` の `containerEnv` | Worker のベース URL（MCP は `{BASE}/sse` に接続。デフォルト: 本番 kzkski） |
 
 #### `OPENCODE_API_KEY` の登録手順
 
@@ -155,7 +155,7 @@ wrangler login --no-browser
 
 | 症状 | 対処 |
 |------|------|
-| MCP が一覧に出ない | `~/.config/opencode/opencode.json` を確認。ターミナルを開き直して `opencode` を再起動 |
-| `ECONNREFUSED` | `CKAN_MCP_BASE_URL` が正しいか確認（`curl "${CKAN_MCP_BASE_URL}/tools"`） |
-| ブリッジ起動エラー | `~/.local/share/ckan-mcp-worker` で `npm install --omit=dev` を再実行 |
+| MCP が一覧に出ない | `~/.config/opencode/opencode.json` の `url` が **`/sse` で終わっているか**確認。ターミナルを開き直して `opencode` を再起動 |
+| 接続できない | `/mcp` ではなく **`/sse`** か確認。Worker がデプロイ済みか（`curl -sI "${CKAN_MCP_BASE_URL}/sse"`） |
+| REST は動くが MCP だけ失敗 | OpenCode は Streamable HTTP（`POST /mcp`）非対応。設定を `type: "remote"` + `/sse` にする |
 | HTTP 429 | レート制限（60 req / 60 秒）。しばらく待ってから再試行 |

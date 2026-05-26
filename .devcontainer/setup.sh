@@ -2,8 +2,7 @@
 set -e
 
 CKAN_MCP_BASE_URL="${CKAN_MCP_BASE_URL:-https://ckan-mcp-worker.kzkski.workers.dev}"
-CKAN_MCP_DIR="${HOME}/.local/share/ckan-mcp-worker"
-CKAN_MCP_BRIDGE="${CKAN_MCP_DIR}/scripts/mcp-stdio-bridge.mjs"
+CKAN_MCP_SSE_URL="${CKAN_MCP_BASE_URL%/}/sse"
 
 echo "==> Installing OpenCode..."
 curl -fsSL https://opencode.ai/install | bash
@@ -12,15 +11,6 @@ echo "==> Installing OpenCode skills..."
 # グローバルインストール先: ~/.agents/skills/<name>/SKILL.md（OpenCode が読み込む）
 npx --yes skills add cloudflare/skills -a opencode -g -y
 npx --yes skills add yusukebe/hono-skill -a opencode -g -y
-
-echo "==> Installing ckan-mcp-worker (stdio bridge)..."
-mkdir -p "$(dirname "${CKAN_MCP_DIR}")"
-if [[ -d "${CKAN_MCP_DIR}/.git" ]]; then
-  git -C "${CKAN_MCP_DIR}" pull --ff-only
-else
-  git clone --depth 1 https://github.com/kzkski/ckan-mcp-worker.git "${CKAN_MCP_DIR}"
-fi
-(cd "${CKAN_MCP_DIR}" && npm install --omit=dev)
 
 echo "==> Installing Wrangler (global)..."
 npm install -g wrangler
@@ -54,13 +44,10 @@ cat > "${HOME}/.config/opencode/opencode.json" <<EOF
   },
   "mcp": {
     "ckan-open-data": {
-      "type": "local",
-      "command": ["node", "${CKAN_MCP_BRIDGE}"],
+      "type": "remote",
+      "url": "${CKAN_MCP_SSE_URL}",
       "enabled": true,
-      "timeout": 120000,
-      "environment": {
-        "CKAN_MCP_BASE_URL": "${CKAN_MCP_BASE_URL}"
-      }
+      "timeout": 120000
     }
   }
 }
@@ -71,8 +58,7 @@ echo "Setup complete! Tools installed:"
 echo "  - OpenCode:  $(command -v opencode 2>/dev/null || echo "${HOME}/.opencode/bin/opencode")"
 echo "  - Wrangler:  $(command -v wrangler 2>/dev/null || echo 'installed')"
 echo "  - cloudflared: $(cloudflared --version 2>/dev/null || echo 'installed')"
-echo "  - ckan-open-data MCP: ${CKAN_MCP_BRIDGE}"
-echo "    Worker: ${CKAN_MCP_BASE_URL}"
+echo "  - ckan-open-data MCP (remote SSE): ${CKAN_MCP_SSE_URL}"
 echo ""
 echo "Next steps:"
 echo "  1. Set OPENCODE_BASE_URL in devcontainer.json (or Codespaces secrets)"
