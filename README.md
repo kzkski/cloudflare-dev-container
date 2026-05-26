@@ -12,6 +12,7 @@
 |--------|------|
 | **OpenCode** | AI コーディングアシスタント（ターミナル） |
 | **OpenCode Skills** | `cloudflare/skills`・`yusukebe/hono-skill`（セットアップ時に自動導入） |
+| **ckan-open-data MCP** | 日本の CKAN オープンデータ（仙台市 / G空間 / BODIK）— 本番 Worker 経由 |
 | **Wrangler** | Cloudflare Workers の開発・デプロイ CLI |
 | **cloudflared** | Cloudflare Tunnel（ローカル公開・接続） |
 | **Hono** | 軽量 Web フレームワーク（プロジェクト作成時に導入） |
@@ -40,7 +41,17 @@ opencode
 opencode auth list
 ```
 
-設定ファイルは `~/.config/opencode/config.json` に生成されます。`OPENCODE_BASE_URL` と `OPENCODE_API_KEY` が devcontainer の環境変数から反映されます。
+設定ファイルは `~/.config/opencode/opencode.json` に生成されます。`OPENCODE_BASE_URL` と `OPENCODE_API_KEY` が devcontainer の環境変数から反映されます。
+
+**ckan-open-data MCP** はセットアップ時に登録されます（stdio ブリッジ → 本番 Worker `https://ckan-mcp-worker.kzkski.workers.dev`）。`opencode` 起動後、MCP 一覧で `ckan-open-data` が有効か確認してください。
+
+利用例（エージェントへの指示）:
+
+```
+ckan-open-data の search_datasets で portal=sendai、keyword=人口、limit=5 として検索し、結果を要約してください。
+```
+
+対応ツール: `search_datasets` / `get_dataset` / `search_records` / `list_organizations`（詳細は [ckan-mcp-worker MCP ガイド](https://github.com/kzkski/ckan-mcp-worker/blob/main/docs/MCP_CLIENT_SETUP.md)）。
 
 Cloudflare / Hono 向けの Skills は `setup.sh` 実行時にグローバルインストール（`-g`）され、次の形式で配置されます（OpenCode の agent-compatible パス）。
 
@@ -119,6 +130,7 @@ wrangler login --no-browser
 |------|----------|------|
 | `OPENCODE_API_KEY` | リポジトリの **Codespaces シークレット** | OpenCode API キー（`devcontainer.json` の `secrets` と同名） |
 | `OPENCODE_BASE_URL` | `devcontainer.json` の `containerEnv` | OpenCode 互換 API のベース URL（後から設定可） |
+| `CKAN_MCP_BASE_URL` | `devcontainer.json` の `containerEnv` | ckan-open-data MCP が接続する Worker URL（デフォルト: 本番 kzkski） |
 
 #### `OPENCODE_API_KEY` の登録手順
 
@@ -138,3 +150,12 @@ wrangler login --no-browser
 ```
 
 `setup.sh` 完了後は **新しいターミナルを開いて** から `opencode` や `wrangler` を使ってください（OpenCode インストーラが `.bashrc` に追加した PATH はログイン時に読み込まれます）。
+
+### ckan-open-data MCP のトラブルシュート
+
+| 症状 | 対処 |
+|------|------|
+| MCP が一覧に出ない | `~/.config/opencode/opencode.json` を確認。ターミナルを開き直して `opencode` を再起動 |
+| `ECONNREFUSED` | `CKAN_MCP_BASE_URL` が正しいか確認（`curl "${CKAN_MCP_BASE_URL}/tools"`） |
+| ブリッジ起動エラー | `~/.local/share/ckan-mcp-worker` で `npm install --omit=dev` を再実行 |
+| HTTP 429 | レート制限（60 req / 60 秒）。しばらく待ってから再試行 |

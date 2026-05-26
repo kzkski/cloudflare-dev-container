@@ -13,7 +13,8 @@
   },
   "postCreateCommand": ".devcontainer/setup.sh",
   "containerEnv": {
-    "OPENCODE_BASE_URL": ""
+    "OPENCODE_BASE_URL": "",
+    "CKAN_MCP_BASE_URL": "https://ckan-mcp-worker.kzkski.workers.dev"
   },
   "remoteEnv": {
     "OPENCODE_API_KEY": "${localEnv:OPENCODE_API_KEY}"
