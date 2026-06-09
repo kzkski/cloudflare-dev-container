@@ -1,27 +1,51 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
+
+log() { echo "==> $*"; }
+try() { "$@" || echo "WARN: failed -> $*"; }
 
 CKAN_MCP_BASE_URL="${CKAN_MCP_BASE_URL:-https://ckan-mcp-worker.kzkski.workers.dev}"
 CKAN_MCP_REMOTE_URL="${CKAN_MCP_BASE_URL%/}/mcp"
 
-echo "==> Installing OpenCode..."
-curl -fsSL https://opencode.ai/install | bash
+log "Installing OpenCode..."
 
-echo "==> Installing OpenCode skills..."
+resolve_latest() {
+  local auth=()
+  [ -n "${GITHUB_TOKEN:-}" ] && auth=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+  curl -fsSL "${auth[@]}" https://api.github.com/repos/anomalyco/opencode/releases/latest \
+    | sed -n 's/.*"tag_name": *"v\([^"]*\)".*/\1/p'
+}
+
+ver=""
+for i in 1 2 3; do
+  ver="$(resolve_latest || true)"
+  [ -n "$ver" ] && break
+  echo "WARN: version resolve failed (attempt $i); retrying..."
+  sleep $((i*5))
+done
+
+if [ -n "$ver" ]; then
+  curl -fsSL https://opencode.ai/install | bash -s -- --version "$ver"
+else
+  echo "WARN: could not resolve latest; falling back to pinned ${OPENCODE_VERSION:-1.16.2}"
+  curl -fsSL https://opencode.ai/install | bash -s -- --version "${OPENCODE_VERSION:-1.16.2}"
+fi
+
+log "Installing OpenCode skills..."
 # グローバルインストール先: ~/.agents/skills/<name>/SKILL.md（OpenCode が読み込む）
-npx --yes skills add cloudflare/skills -a opencode -g -y
-npx --yes skills add yusukebe/hono-skill -a opencode -g -y
+try npx --yes skills add cloudflare/skills -a opencode -g -y
+try npx --yes skills add yusukebe/hono-skill -a opencode -g -y
 
-echo "==> Installing Wrangler (global)..."
+log "Installing Wrangler (global)..."
 npm install -g wrangler
 
-echo "==> Installing cloudflared..."
+log "Installing cloudflared..."
 CLOUDFLARED_DEB="/tmp/cloudflared-linux-amd64.deb"
-wget -q "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb" -O "${CLOUDFLARED_DEB}"
-sudo dpkg -i "${CLOUDFLARED_DEB}"
+try wget -q "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb" -O "${CLOUDFLARED_DEB}"
+try sudo dpkg -i "${CLOUDFLARED_DEB}"
 rm -f "${CLOUDFLARED_DEB}"
 
-echo "==> Generating OpenCode config..."
+log "Generating OpenCode config..."
 mkdir -p "${HOME}/.config/opencode"
 rm -f "${HOME}/.config/opencode/config.json"
 cat > "${HOME}/.config/opencode/opencode.json" <<EOF
@@ -32,7 +56,7 @@ cat > "${HOME}/.config/opencode/opencode.json" <<EOF
       "npm": "@ai-sdk/openai-compatible",
       "name": "OpenCode API",
       "options": {
-        "baseURL": "${OPENCODE_BASE_URL}",
+        "baseURL": "${OPENCODE_BASE_URL:-}",
         "apiKey": "{env:OPENCODE_API_KEY}"
       },
       "models": {
