@@ -24,6 +24,14 @@ try() {
   }
 }
 
+pause_for_user() {
+  [ -r /dev/tty ] || return 0
+  echo ""
+  echo "Press Enter to close this terminal."
+  echo "Enter キーを押すとこのターミナルを閉じられます。"
+  read -r _ </dev/tty
+}
+
 CKAN_MCP_BASE_URL="${CKAN_MCP_BASE_URL:-https://ckan-mcp-worker.kzkski.workers.dev}"
 CKAN_MCP_REMOTE_URL="${CKAN_MCP_BASE_URL%/}/mcp"
 
@@ -150,3 +158,5 @@ echo "  3. Run: wrangler login --no-browser"
 echo "     実行: wrangler login --no-browser"
 echo "  4. Run: opencode (MCP ckan-open-data should appear in the MCP list)"
 echo "     実行: opencode（MCP 一覧に ckan-open-data が表示されることを確認）"
+
+pause_for_user
