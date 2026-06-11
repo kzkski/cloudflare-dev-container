@@ -11,7 +11,7 @@
 | ツール | 用途 |
 |--------|------|
 | **OpenCode** | AI コーディングアシスタント（ターミナル） |
-| **OpenCode Skills** | `cloudflare/skills`・`yusukebe/hono-skill`・`kzkski/moc-skill`（セットアップ時に自動導入） |
+| **OpenCode Skills** | Cloudflare / Hono / FIWARE Orion 向けスキル 3 種（セットアップ時に自動導入。詳細は下記） |
 | **ckan-open-data MCP** | 日本の CKAN オープンデータ（仙台市 / G空間 / BODIK）— 本番 Worker の **リモート MCP**（`POST /mcp`） |
 | **Wrangler** | Cloudflare Workers の開発・デプロイ CLI |
 | **cloudflared** | Cloudflare Tunnel（ローカル公開・接続） |
@@ -53,7 +53,9 @@ ckan-open-data の search_datasets で portal=sendai、keyword=人口、limit=5 
 
 対応ツール: `search_datasets` / `get_dataset` / `search_records` / `list_organizations`（詳細は [ckan-mcp-worker MCP ガイド](https://github.com/kzkski/ckan-mcp-worker/blob/main/docs/MCP_CLIENT_SETUP.md)）。
 
-Cloudflare / Hono 向けの Skills は `setup.sh` 実行時にグローバルインストール（`-g`）され、次の形式で配置されます（OpenCode の agent-compatible パス）。
+#### OpenCode Skills
+
+`setup.sh` 実行時に 3 つのスキルパッケージがグローバルインストール（`-g`）されます。配置先は OpenCode の agent-compatible パスです。
 
 ```
 ~/.agents/skills/<skill-name>/SKILL.md
@@ -61,9 +63,92 @@ Cloudflare / Hono 向けの Skills は `setup.sh` 実行時にグローバルイ
 
 例: `~/.agents/skills/wrangler/SKILL.md`
 
-- [cloudflare/skills](https://github.com/cloudflare/skills)
-- [yusukebe/hono-skill](https://github.com/yusukebe/hono-skill)
-- [kzkski/moc-skill](https://github.com/kzkski/moc-skill) — FIWARE Orion (NGSIv2) 読み取り専用クエリ（`jq` もセットアップ時に導入）
+スキルは会話の内容に応じてエージェントが自動的に読み込みます。自然言語で依頼するだけで、各スキルが持つ最新のベストプラクティスや API 知識が反映されます。
+
+##### [cloudflare/skills](https://github.com/cloudflare/skills) — Cloudflare プラットフォーム全般
+
+Cloudflare 公式の Agent Skills コレクションです。Workers・Pages・ストレージ（KV / D1 / R2）・AI（Workers AI / Vectorize / Agents SDK）・ネットワーク（Tunnel / Spectrum）・セキュリティ（WAF / DDoS）・IaC（Terraform / Pulumi）など、Cloudflare Developer Platform 全体をカバーします。
+
+セットアップ時に複数のスキルがまとめてインストールされます。主なものは次のとおりです。
+
+| スキル | 用途 |
+|--------|------|
+| `cloudflare` | プラットフォーム全体の包括的なガイド |
+| `wrangler` | Workers のデプロイ・開発、KV / R2 / D1 / Vectorize / Queues / Workflows の管理 |
+| `agents-sdk` | ステートフル AI エージェント（状態管理・スケジューリング・RPC・MCP・メール・ストリーミングチャット） |
+| `durable-objects` | ステートフルな協調処理（チャットルーム・マルチプレイヤーゲーム・予約システム）、SQLite・alarms・WebSockets |
+| `sandbox-sdk` | AI コード実行・コードインタプリタ・CI/CD・対話型開発環境向けのサンドボックス |
+| `web-perf` | Core Web Vitals（FCP / LCP / TBT / CLS）の監査、レンダリングブロック・ネットワークチェーンの分析 |
+| `building-mcp-server-on-cloudflare` | Cloudflare 上でのリモート MCP サーバー構築（ツール・OAuth・デプロイ） |
+| `building-ai-agent-on-cloudflare` | ステート・WebSockets・ツール連携を持つ AI エージェントの構築 |
+
+利用例:
+
+```
+Durable Objects でチャットルームを作りたい。SQLite ストレージと WebSocket を使った構成を教えて。
+```
+
+```
+wrangler.jsonc に D1 と KV のバインディングを追加する手順を教えて。
+```
+
+##### [yusukebe/hono-skill](https://github.com/yusukebe/hono-skill) — Hono Web フレームワーク
+
+[Hono](https://hono.dev/) アプリケーション開発向けのスキルです。ルーティング・コンテキスト・ミドルウェア・JSX・バリデーション・RPC・ストリーミング・ヘルパーなど、Hono API のリファレンス知識をエージェントにインラインで提供します。
+
+[Hono CLI](https://github.com/honojs/cli)（`hono request`）を使ったリクエストテストの手順も含まれます。プロジェクト作成時に `npm install -D @hono/cli` で CLI を導入すると、エージェントがエンドポイントの動作確認まで支援できます。
+
+利用例:
+
+```
+Hono で Bearer トークン認証のミドルウェアを書いて。
+```
+
+```
+このルートに対して hono request で GET リクエストを送って動作を確認して。
+```
+
+##### [kzkski/moc-skill](https://github.com/kzkski/moc-skill) — FIWARE Orion (NGSIv2) 読み取り専用クエリ
+
+[FIWARE Orion Context Broker](https://fiware-orion.readthedocs.io/)（NGSIv2）から、認証不要の **GET のみ** でエンティティ情報を取得するためのスキルです。スマートシティ基盤（Make Our City など）に登録されたセンサーデータや都市 OS のコンテキスト情報を、エージェント経由で問い合わせられます。
+
+- **読み取り専用**: Entity の Read のみ（書き込み・Subscription・Registration は非対応）
+- **ホワイトリスト方式**: `endpoints.json` に登録された基盤だけアクセス可能
+- **安全な問い合わせ**: エージェントは `scripts/orion.sh` 経由でのみ Orion に接続
+
+セットアップ時に依存パッケージ `jq` もインストールされます。Orion 基盤を使う場合は、インストール後にエンドポイントを登録してください。
+
+```bash
+# 編集先（グローバルインストール時）
+~/.agents/skills/moc-skill/endpoints.json
+```
+
+```json
+{
+  "endpoints": {
+    "sendai": {
+      "base_url": "https://orion.sendai.makeour.city",
+      "Fiware-Service": "sendai",
+      "Fiware-ServicePath": "/prod",
+      "note": "仙台市都市OS基盤"
+    }
+  }
+}
+```
+
+利用例:
+
+```
+登録されている Orion 基盤を一覧して。
+```
+
+```
+sendai 基盤の AirQualityObserved 型のエンティティを 10 件取得して要約して。
+```
+
+```
+sendai 基盤で type=Device のエンティティ件数を教えて。
+```
 
 ### Wrangler（ローカル開発）
 
