@@ -41,7 +41,15 @@
 
 2. コンテナのビルドが進む（作成ログで進捗を確認できます）
 3. ビルドが完了すると Codespaces の画面が開き、ポート **8787**（Wrangler Dev Server）の転送が設定される
+
+   ![ビルド完了後の Codespaces 画面（ターミナル・ポートタブ）](docs/images/codespace-terminal-ready.png)
+
 4. 続いて `.devcontainer/setup.sh` が自動実行され、OpenCode・Skills・Wrangler などがインストールされる。**初回は 3〜5 分程度**かかることがあります。完了するまで気長にお待ちください
+
+   ![setup.sh の自動実行中（Running postCreateCommand）](docs/images/setup-sh-running.png)
+
+   細かい進捗を確認したい場合は、**Cmd/Ctrl + Shift + P** でコマンドパレットを開き、**View Creation Log**（作成ログを表示）を選択してください。全文のログが表示され、各ステップの実行状況を追えます。進みが気になるときだけ眺めれば十分です。
+
 5. セットアップ完了後、**新しいターミナルを開いて**から `opencode` や `wrangler` を使い始める（PATH の反映に新しいセッションが必要）
 
 ## 使い方
