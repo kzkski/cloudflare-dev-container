@@ -36,6 +36,9 @@
 ### Codespace の作成（ここから開始）
 
 1. GitHub 上で **Code** → **Codespaces** → **Create codespace on main** を選択する
+
+   ![Create codespace on main を選択する画面](docs/images/create-codespace-on-main.png)
+
 2. コンテナのビルドが進む（作成ログで進捗を確認できます）
 3. ビルドが完了すると Codespaces の画面が開き、ポート **8787**（Wrangler Dev Server）の転送が設定される
 4. 続いて `.devcontainer/setup.sh` が自動実行され、OpenCode・Skills・Wrangler などがインストールされる。**初回は 3〜5 分程度**かかることがあります。完了するまで気長にお待ちください
