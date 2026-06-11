@@ -21,13 +21,25 @@
 
 ## 起動手順
 
-1. このリポジトリを GitHub にプッシュする（またはテンプレートとして利用する）
-2. リポジトリの **Settings** → **Secrets and variables** → **Codespaces** で、シークレット `OPENCODE_API_KEY` を追加する
-3. GitHub 上で **Code** → **Codespaces** → **Create codespace on main** を選択
-4. コンテナのビルドと `setup.sh` の実行が完了するまで待つ（初回は数分かかることがあります）
-5. ポート **8787**（Wrangler Dev Server）が自動転送される
+基本的には、GitHub 上で Codespace を作成するだけで開発を始められます。リポジトリのフォークや API キーの登録は**必須ではありません**。
 
-必要に応じて、`.devcontainer/devcontainer.json` の `OPENCODE_BASE_URL` に API のベース URL を設定してください。
+### 事前準備（任意）
+
+必要な場合のみ、Codespace 作成の前に行ってください。
+
+| 項目 | いつ必要か |
+|------|------------|
+| **リポジトリのカスタマイズ** | `.devcontainer` の設定を変更したい、自分用に管理したい場合。フォーク・クローン・テンプレート利用など、用途に合わせて準備する |
+| **`OPENCODE_API_KEY` の登録** | OpenCode の有料 API を別途契約している場合のみ。リポジトリの **Settings** → **Secrets and variables** → **Codespaces** に同名のシークレットを追加する（手順は [環境変数・シークレット](#環境変数シークレット) を参照） |
+| **`OPENCODE_BASE_URL` の設定** | 上記と同様、外部の OpenCode 互換 API を使う場合のみ。`.devcontainer/devcontainer.json` の `containerEnv` にベース URL を記入する |
+
+### Codespace の作成（ここから開始）
+
+1. GitHub 上で **Code** → **Codespaces** → **Create codespace on main** を選択する
+2. コンテナのビルドが進む（作成ログで進捗を確認できます）
+3. ビルドが完了すると Codespaces の画面が開き、ポート **8787**（Wrangler Dev Server）の転送が設定される
+4. 続いて `.devcontainer/setup.sh` が自動実行され、OpenCode・Skills・Wrangler などがインストールされる。**初回は 3〜5 分程度**かかることがあります。完了するまで気長にお待ちください
+5. セットアップ完了後、**新しいターミナルを開いて**から `opencode` や `wrangler` を使い始める（PATH の反映に新しいセッションが必要）
 
 ## 使い方
 
@@ -143,11 +155,11 @@ Hono で Bearer トークン認証のミドルウェアを書いて。
 ```
 
 ```
-sendai 基盤の AirQualityObserved 型のエンティティを 10 件取得して要約して。
+横須賀市のFiwareに登録されているエンティティを取得して要約して。
 ```
 
 ```
-sendai 基盤で type=Device のエンティティ件数を教えて。
+佐賀市のFiwareに登録されている情報のtypeごとの件数を教えて。
 ```
 
 ### Wrangler（ローカル開発）
