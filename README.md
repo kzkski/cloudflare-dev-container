@@ -11,7 +11,7 @@
 | ツール | 用途 |
 |--------|------|
 | **OpenCode** | AI コーディングアシスタント（ターミナル） |
-| **OpenCode Skills** | `cloudflare/skills`・`yusukebe/hono-skill`（セットアップ時に自動導入） |
+| **OpenCode Skills** | `cloudflare/skills`・`yusukebe/hono-skill`・`kzkski/moc-skill`（セットアップ時に自動導入） |
 | **ckan-open-data MCP** | 日本の CKAN オープンデータ（仙台市 / G空間 / BODIK）— 本番 Worker の **リモート MCP**（`POST /mcp`） |
 | **Wrangler** | Cloudflare Workers の開発・デプロイ CLI |
 | **cloudflared** | Cloudflare Tunnel（ローカル公開・接続） |
@@ -63,6 +63,7 @@ Cloudflare / Hono 向けの Skills は `setup.sh` 実行時にグローバルイ
 
 - [cloudflare/skills](https://github.com/cloudflare/skills)
 - [yusukebe/hono-skill](https://github.com/yusukebe/hono-skill)
+- [kzkski/moc-skill](https://github.com/kzkski/moc-skill) — FIWARE Orion (NGSIv2) 読み取り専用クエリ（`jq` もセットアップ時に導入）
 
 ### Wrangler（ローカル開発）
 
