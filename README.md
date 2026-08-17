@@ -19,6 +19,18 @@
 
 加えて、VS Code 拡張 **Cloudflare Workers Bindings** がプリインストールされます。
 
+## サンプルデータ（人流）
+
+リポジトリ同梱の仙台市 BLE 人流センサーデータです。Codespace クローン直後から、追加ダウンロードなしで利用できます。
+
+| パス | 内容 |
+|------|------|
+| [`data/people-flow/people-flow-2025.csv`](data/people-flow/people-flow-2025.csv) | 2025年の時間帯別人流観測値 |
+| [`data/people-flow/people-flow-2026.csv`](data/people-flow/people-flow-2026.csv) | 2026年の時間帯別人流観測値（〜5月頃） |
+| [`data/people-flow/people-flow-sensor.csv`](data/people-flow/people-flow-sensor.csv) | センサー位置マスタ（28 地点） |
+
+スキーマ・結合例は [`data/people-flow/README.md`](data/people-flow/README.md) を参照してください。
+
 ## 起動手順
 
 基本的には、GitHub 上で Codespace を作成するだけで開発を始められます。リポジトリのフォークや API キーの登録は**必須ではありません**。
