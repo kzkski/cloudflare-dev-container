@@ -31,6 +31,17 @@
 
 スキーマ・結合例は [`data/people-flow/README.md`](data/people-flow/README.md) を参照してください。
 
+## サンプルデータ（浜松市：避難所・雨量）
+
+リポジトリ同梱の浜松市の避難所一覧と雨量観測所データです。地図表示の試作などにそのまま使えます。
+
+| パス | 内容 |
+|------|------|
+| [`data/hamamatsu/shelters_hamamatsu.csv`](data/hamamatsu/shelters_hamamatsu.csv) | 避難所一覧（182 件、緯度経度・収容可能人員など） |
+| [`data/hamamatsu/rain_hamamatsu.csv`](data/hamamatsu/rain_hamamatsu.csv) | 雨量観測所の降水量（23 地点、スナップショット） |
+
+スキーマ・読み込み例は [`data/hamamatsu/README.md`](data/hamamatsu/README.md) を参照してください。
+
 ## 起動手順
 
 基本的には、GitHub 上で Codespace を作成するだけで開発を始められます。リポジトリのフォークや API キーの登録は**必須ではありません**。
