@@ -69,8 +69,9 @@ log "Installing OpenCode skills..." "OpenCode スキルをインストール中.
 # グローバルインストール先: ~/.agents/skills/<name>/SKILL.md（OpenCode が読み込む）
 detail "Adding cloudflare/skills..." "cloudflare/skills を追加中..."
 try npx --yes skills add cloudflare/skills -a opencode -g -y
-detail "Adding yusukebe/hono-skill..." "yusukebe/hono-skill を追加中..."
-try npx --yes skills add yusukebe/hono-skill -a opencode -g -y
+# 旧 yusukebe/hono-skill は honojs/skills へ移行済み（archived）。旧リポジトリは SKILL.md が無く導入に失敗する。
+detail "Adding honojs/skills..." "honojs/skills を追加中..."
+try npx --yes skills add honojs/skills -a opencode -g -y
 detail "Installing jq (moc-skill dependency)..." "jq をインストール中（moc-skill の依存）..."
 try sudo apt-get update -qq && sudo apt-get install -y -qq jq
 detail "Adding kzkski/moc-skill..." "kzkski/moc-skill を追加中..."

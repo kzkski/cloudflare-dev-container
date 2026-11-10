@@ -138,9 +138,17 @@ Durable Objects でチャットルームを作りたい。SQLite ストレージ
 wrangler.jsonc に D1 と KV のバインディングを追加する手順を教えて。
 ```
 
-##### [yusukebe/hono-skill](https://github.com/yusukebe/hono-skill) — Hono Web フレームワーク
+##### [honojs/skills](https://github.com/honojs/skills) — Hono Web フレームワーク
 
-[Hono](https://hono.dev/) アプリケーション開発向けのスキルです。ルーティング・コンテキスト・ミドルウェア・JSX・バリデーション・RPC・ストリーミング・ヘルパーなど、Hono API のリファレンス知識をエージェントにインラインで提供します。
+[Hono](https://hono.dev/) アプリケーション開発向けのスキルです。Hono 公式リポジトリで管理されており、旧 `yusukebe/hono-skill` の移行先です。ルーティング・コンテキスト・ミドルウェア・JSX・バリデーション・RPC・ストリーミング・ヘルパーなど、Hono API のリファレンス知識をエージェントにインラインで提供します。
+
+セットアップ時に次の 3 つのスキルがインストールされます。
+
+| スキル | 用途 |
+|--------|------|
+| `hono` | Hono API 全般のリファレンスと開発手順 |
+| `hono-jsx` | `hono/jsx` を使った UI 構築（サーバーレンダリング・フォーム・クライアントコンポーネント） |
+| `hono-void` | Hono ベースのフレームワーク Void のアプリ向け（Void プロジェクトでのみ使用） |
 
 [Hono CLI](https://github.com/honojs/cli)（`hono request`）を使ったリクエストテストの手順も含まれます。プロジェクト作成時に `npm install -D @hono/cli` で CLI を導入すると、エージェントがエンドポイントの動作確認まで支援できます。
 
