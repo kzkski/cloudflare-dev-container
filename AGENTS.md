@@ -33,3 +33,20 @@
 - **`SUBMISSION.md` を作る前に、また参加者が「OK」と答える前に、`bash .devcontainer/submit.sh`（提出）を実行しない**。最初に実行してよいのは `--dry-run` だけ。
 - 提出は必ず `.devcontainer/submit.sh` で行う。失敗しても、`curl` の直接実行などの**独自の別手段で提出しない**。エラーはそのまま参加者に伝える。
 - 認証ファイル（`~/.local/share/opencode/auth.json`）とトークンは、読み取り・表示・出力をしない。
+
+## 6. GitHub への保存
+- **「保存して」「GitHub に残して」「push して」などと頼まれたら、`/save` コマンドの手順（`.opencode/commands/save.md`）に従うこと**。参加者に git コマンドを打たせない。Codespaces では `GITHUB_TOKEN` が自動で設定され、作成元のリポジトリに push できる（追加の認証は不要）。
+  1. `gh repo view --json nameWithOwner,url` で保存先を確認する
+  2. 保存先が **`kzkski/cloudflare-dev-container`** なら、**保存せずに止める**。「ここは講師のリポジトリから作った作業部屋なので、保存できません。自分のリポジトリから作業部屋を作り直してください」と伝える
+  3. `git status` で変更を確認する。変更がなければ「保存する変更がありません」と伝えて終わる。秘密情報らしいファイル（`.env`・認証情報・鍵など）が含まれていたら、`git add` せずに参加者に確認する
+  4. `git add -A` を実行し、変更内容を要約した **日本語の短いコミットメッセージ** で `git commit` する
+  5. `git push` する（gh は保存先の確認と URL の表示に使う。push 自体は `git push` で行う）
+  6. 保存したファイルの一覧と、リポジトリの URL を伝える
+- **禁止事項**:
+  - `git push --force` など、履歴を書き換える操作
+  - `git remote` の変更
+  - `gh auth login` / `gh auth logout` の実行
+  - `gh repo create`、リポジトリの設定変更、公開範囲の変更
+  - `GITHUB_TOKEN` や認証情報の表示
+- push に失敗したら、**エラーをそのまま参加者に伝える**。トークン付き URL への変更など、**独自の別手段は試さない**。
+- **保存（GitHub への push）は提出（`/submit`）とは別物**。保存しても、主催者への提出にはならない。参加者に聞かれたら、そう伝える。
