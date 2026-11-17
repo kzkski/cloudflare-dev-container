@@ -106,11 +106,11 @@ test("正常に提出すると R2 に tar.gz と .md が保存される", async 
   assert.equal(body.ok, true);
   const keys = [...bucket.store.keys()].sort();
   assert.equal(keys.length, 2);
-  assert.match(keys[0], /^submissions\/taro\.yamada@example\.com\/\d{8}T\d{9}Z\.md$/);
-  assert.match(keys[1], /^submissions\/taro\.yamada@example\.com\/\d{8}T\d{9}Z\.tar\.gz$/);
+  assert.match(keys[0], /^taro\.yamada@example\.com\/\d{8}T\d{9}Z\.md$/);
+  assert.match(keys[1], /^taro\.yamada@example\.com\/\d{8}T\d{9}Z\.tar\.gz$/);
   assert.equal(keys[0].replace(/\.md$/, ""), keys[1].replace(/\.tar\.gz$/, ""));
   assert.equal(bucket.store.get(keys[1]).options.customMetadata.githubUser, "taro");
-  assert.equal(body.id, keys[1].split("/")[2].replace(".tar.gz", ""));
+  assert.equal(body.id, keys[1].split("/")[1].replace(".tar.gz", ""));
 });
 
 test("トークンなし・不正トークンは 401", async () => {

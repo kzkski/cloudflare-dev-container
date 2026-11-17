@@ -10,8 +10,8 @@ opencode 研修イベントで、参加者が作ったアプリを回収する�
 
 ```
 Codespace                                   受付 Worker                       R2
- /submit  ─ .devcontainer/submit.sh ─ POST /submit ─▶  JWT を検証  ─▶  submissions/{email}/{時刻}.tar.gz
-          Authorization: Bearer <JWT>                  (署名/exp/iss/aud)      submissions/{email}/{時刻}.md
+ /submit  ─ .devcontainer/submit.sh ─ POST /submit ─▶  JWT を検証  ─▶  {email}/{時刻}.tar.gz
+          Authorization: Bearer <JWT>                  (署名/exp/iss/aud)      {email}/{時刻}.md
 ```
 
 - 参加者が `opencode auth login` で得た **Cloudflare Access の JWT**（`~/.local/share/opencode/auth.json` の `token`）をそのまま Bearer トークンとして使います。参加者に新しいログインは不要です。
@@ -26,7 +26,7 @@ Codespace                                   受付 Worker                       
 | `POST /submit` | 提出。`Authorization: Bearer <JWT>` と multipart/form-data（`archive`: tar.gz、`SUBMISSION.md`、`GITHUB_USER`）が必要 |
 | `GET /health` | 疎通確認（`{"ok":true}`） |
 
-成功時の応答: `{"ok":true,"id":"20261117T123456789Z","email":"...","key":"submissions/.../....tar.gz","size":12345,"submittedAt":"..."}`
+成功時の応答: `{"ok":true,"id":"20261117T123456789Z","email":"...","key":"<email>/<時刻>.tar.gz","size":12345,"submittedAt":"..."}`
 失敗時の応答: `{"ok":false,"error":"日本語のメッセージ"}`（HTTP 400 / 401 / 413 / 500）
 
 ## 設定値（`wrangler.toml`）
@@ -55,7 +55,7 @@ Wrangler 4.58 は Node 20 でも動くため、版を固定しています（最
 R2 の中身は次の構成です。
 
 ```
-submissions/
+hdsc2026-submissions/        ← バケット
   taro@example.com/
     20261117T031500123Z.tar.gz   ← 作品
     20261117T031500123Z.md       ← SUBMISSION.md
@@ -82,7 +82,7 @@ submissions/
 3. 全員分をダウンロードする。
 
    ```bash
-   rclone copy r2:hdsc2026-submissions/submissions ./submissions --progress
+   rclone copy r2:hdsc2026-submissions ./submissions --progress
    ```
 
 4. すべての tar.gz をそれぞれのフォルダに展開する。
@@ -107,7 +107,7 @@ submissions/
 Wrangler 4.58 にはバケット内の一覧コマンドがないため、キーが分かっている個別のファイルだけ取れます（キーは提出時の応答の `key`、または Cloudflare ダッシュボードの R2 画面で確認できます）。
 
 ```bash
-npx wrangler r2 object get "hdsc2026-submissions/submissions/taro@example.com/20261117T031500123Z.tar.gz" \
+npx wrangler r2 object get "hdsc2026-submissions/taro@example.com/20261117T031500123Z.tar.gz" \
   --remote --file ./taro.tar.gz
 ```
 

@@ -122,7 +122,8 @@ export function createHandler(verify: Verifier = defaultVerifier) {
     const submittedAt = new Date();
     // 例: 20261117T123456789Z（ミリ秒まで含めて重複しにくくする）
     const timestamp = submittedAt.toISOString().replace(/[-:.]/g, "");
-    const prefix = `submissions/${sanitizeEmail(email)}/${timestamp}`;
+    // バケット名自体が「提出物」なので、直下にメールアドレスのフォルダを置く
+    const prefix = `${sanitizeEmail(email)}/${timestamp}`;
     const archiveKey = `${prefix}.tar.gz`;
     const mdKey = `${prefix}.md`;
     const customMetadata = {
