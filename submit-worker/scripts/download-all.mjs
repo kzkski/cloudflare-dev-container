@@ -12,10 +12,11 @@
 // 主催者のメールアドレスが Worker の ADMIN_EMAILS に登録されている必要がある。
 //
 // 何度実行してもよい。すでに同じサイズで保存済みのファイルはスキップする（差分だけ取得）。
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createWriteStream, existsSync, mkdirSync, readFileSync, renameSync, statSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve, sep } from "node:path";
+import { createInterface } from "node:readline";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { parseArgs } from "node:util";
@@ -58,32 +59,49 @@ function tokenFromAuthFile() {
   }
 }
 
-function tokenFromCloudflared() {
-  const run = (args, inherit = false) =>
-    spawnSync("cloudflared", args, { encoding: "utf8", stdio: inherit ? "inherit" : ["ignore", "pipe", "pipe"] });
+// `cloudflared access login` を実行する。ブラウザで開く URL などの案内は表示するが、
+// 取得したトークン（JWT）は画面やスクロールバックに残さないよう、その行だけ隠す
+function runCloudflaredLogin() {
+  return new Promise((done) => {
+    const child = spawn("cloudflared", ["access", "login", APP_URL], { stdio: ["inherit", "pipe", "pipe"] });
+    const forward = (stream, write) =>
+      createInterface({ input: stream }).on("line", (line) => {
+        const text = line.trim();
+        if (text.startsWith("eyJ") || text.includes("Successfully fetched your token")) return;
+        write(line);
+      });
+    forward(child.stdout, (line) => console.log(line));
+    forward(child.stderr, (line) => console.error(line));
+    child.on("error", () => done());
+    child.on("close", () => done());
+  });
+}
+
+async function tokenFromCloudflared() {
+  const run = (args) => spawnSync("cloudflared", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
   const probe = run(["--version"]);
   if (probe.error) return { error: "cloudflared が見つかりません。`brew install cloudflared` でインストールしてください" };
 
   let result = run(["access", "token", `-app=${APP_URL}`]);
   if (result.status !== 0 || !result.stdout.trim().startsWith("eyJ")) {
     console.log("Cloudflare Access にログインします。ブラウザが開くので、ログインしてください...");
-    run(["access", "login", APP_URL], true);
+    await runCloudflaredLogin();
     result = run(["access", "token", `-app=${APP_URL}`]);
   }
   const token = result.stdout.trim();
   return token.startsWith("eyJ") ? { token } : { error: "cloudflared でトークンを取得できませんでした" };
 }
 
-function getToken() {
+async function getToken() {
   if (process.env.O4E_TOKEN) return process.env.O4E_TOKEN.trim();
   const fromFile = tokenFromAuthFile();
   if (fromFile) return fromFile;
-  const viaCloudflared = tokenFromCloudflared();
+  const viaCloudflared = await tokenFromCloudflared();
   if (viaCloudflared.token) return viaCloudflared.token;
   die(viaCloudflared.error);
 }
 
-const token = getToken();
+const token = await getToken();
 
 // ---------------- API 呼び出し ----------------
 async function api(path) {
