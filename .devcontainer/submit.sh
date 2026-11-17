@@ -50,7 +50,7 @@ done
 git rev-parse --git-dir > /dev/null 2>&1 || die "${REPO_ROOT} は git リポジトリではありません"
 git rev-parse --verify -q "${BASE_REF}" > /dev/null \
   || die "基準となる ${BASE_REF} が見つかりません。Codespace 上でこのスクリプトを実行しているか確認してください"
-[ -f SUBMISSION.md ] || die "SUBMISSION.md がありません。先に opencode で /submit を実行して作成してください"
+[ -f SUBMISSION.md ] || die "SUBMISSION.md がありません（${REPO_ROOT}/SUBMISSION.md）。アプリの説明を書いた SUBMISSION.md を作成してから、もう一度実行してください（opencode の /submit なら自動で作成します）"
 
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "${WORK_DIR}"' EXIT
