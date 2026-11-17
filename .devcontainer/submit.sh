@@ -123,14 +123,33 @@ fi
 # ---------------------------------------------------------------
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 ARCHIVE="/tmp/submission-${TIMESTAMP}.tar.gz"
-COPYFILE_DISABLE=1 tar -czf "${ARCHIVE}" --null -T "${LIST}" || die "アーカイブの作成に失敗しました"
+# 容量の大きいファイルの上位 5 件を表示する（上限超過の原因を探しやすくする）
+show_largest_files() {
+  echo "" >&2
+  echo "容量の大きいファイル（上位 5 件）:" >&2
+  xargs -0 wc -c < "${LIST}" 2> /dev/null | grep -v ' total$' | sort -rn | head -n 5 \
+    | awk '{ s = $1; $1 = ""; printf "  %8.1f MB  %s\n", s / 1048576, substr($0, 2) }' >&2 || true
+}
+
+# tar.gz を作りながらサイズを監視し、上限（50MB）を 1 バイトでも超えた時点で打ち切る
+# （巨大なファイルが混ざっていても、最後まで圧縮せずにすぐ止まる）
+set +e
+COPYFILE_DISABLE=1 tar -czf - --null -T "${LIST}" 2> "${WORK_DIR}/tar.err" | head -c $((MAX_BYTES + 1)) > "${ARCHIVE}"
+TAR_STATUS="${PIPESTATUS[0]}"
+set -e
 SIZE="$(wc -c < "${ARCHIVE}" | tr -d ' ')"
-echo "アーカイブを作成しました: ${ARCHIVE} ($((SIZE / 1024)) KB)"
 
 if [ "${SIZE}" -gt "${MAX_BYTES}" ]; then
   rm -f "${ARCHIVE}"
-  die "アーカイブが 50MB を超えています（$((SIZE / 1024 / 1024)) MB）。大きなデータや生成物（dist など）を .gitignore に追加するか、削除してからやり直してください"
+  show_largest_files
+  die "提出するファイルの合計が上限（50MB）を超えています。上の大きなファイルを削除するか、.gitignore に追加してからやり直してください（動画・大きなデータ・生成物（dist など）が原因のことが多いです）"
 fi
+if [ "${TAR_STATUS}" -ne 0 ]; then
+  rm -f "${ARCHIVE}"
+  [ -s "${WORK_DIR}/tar.err" ] && sed 's/^/  /' "${WORK_DIR}/tar.err" >&2
+  die "アーカイブの作成に失敗しました"
+fi
+echo "アーカイブを作成しました: ${ARCHIVE} ($((SIZE / 1024)) KB)"
 
 if [ "${DRY_RUN}" -eq 1 ]; then
   echo ""
