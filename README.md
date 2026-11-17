@@ -91,8 +91,6 @@ opencode が作ったコードを読んで `SUBMISSION.md`（アプリ名・で�
 - 認証には opencode のログイン情報を使います。`401` のエラーが出たときは、`opencode auth login https://opencode-for-events.tokyo-odh-002.workers.dev` をやり直してください。
 - opencode が使えないときの予備手段として、ターミナルで `submit` と打っても提出できます（`SUBMISSION.md` は事前に自分で用意してください）。自動提出に失敗した場合は、案内に従ってアーカイブをダウンロードして提出します。
 
-受付 Worker の仕組みと、主催者向けの一括ダウンロード手順は [`submit-worker/README.md`](submit-worker/README.md) を参照してください。
-
 ## 使い方
 
 ### OpenCode
