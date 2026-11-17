@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TOTAL_STEPS=6
+TOTAL_STEPS=7
 CURRENT_STEP=0
 
 log() {
@@ -129,6 +129,23 @@ cat > "${HOME}/.config/opencode/opencode.json" <<EOF
 EOF
 detail "OpenCode config written." "OpenCode 設定の書き込みが完了しました。"
 
+log "Registering submit alias..." "submit エイリアスを登録中..."
+# 作品提出は opencode の /submit が基本。opencode が不調のときの予備として、ターミナルから `submit` でも提出できるようにする
+SUBMIT_SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/submit.sh"
+chmod +x "${SUBMIT_SCRIPT}" 2>/dev/null || true
+SUBMIT_ALIAS="alias submit='bash ${SUBMIT_SCRIPT}'"
+for rc in "${HOME}/.bashrc" "${HOME}/.zshrc"; do
+  # .zshrc は zsh が入っている場合のみ追記する
+  if [ "${rc}" = "${HOME}/.zshrc" ] && ! command -v zsh >/dev/null 2>&1; then
+    continue
+  fi
+  touch "${rc}"
+  if ! grep -q "^alias submit=" "${rc}"; then
+    echo "${SUBMIT_ALIAS}" >> "${rc}"
+  fi
+done
+detail "Registered: ${SUBMIT_ALIAS}" "登録しました: ${SUBMIT_ALIAS}"
+
 echo ""
 echo "================================================================"
 echo " Setup complete!"
@@ -141,6 +158,7 @@ echo "  - OpenCode:  $(command -v opencode 2>/dev/null || echo "${HOME}/.opencod
 echo "  - Wrangler:  $(command -v wrangler 2>/dev/null || echo 'installed')"
 echo "  - cloudflared: $(cloudflared --version 2>/dev/null || echo 'installed')"
 echo "  - ckan-open-data MCP (remote /mcp): ${CKAN_MCP_REMOTE_URL}"
+echo "  - submit (作品提出): opencode で /submit（予備: ターミナルで submit）"
 echo ""
 echo ">>> Close this terminal, then open a new terminal <<<"
 echo ">>> このターミナルを閉じて、新しいターミナルを開いてください <<<"

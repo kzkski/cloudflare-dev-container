@@ -1,0 +1,18 @@
+{
+  "name": "hdsc2026-submit-worker",
+  "private": true,
+  "version": "1.0.0",
+  "description": "opencode 研修イベントの作品提出を受け付ける Worker（Cloudflare Access の JWT を検証して R2 に保存）",
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "typecheck": "tsc --noEmit",
+    "test": "esbuild src/app.ts src/jwt.ts --bundle --format=esm --platform=node --splitting --outdir=.test-build && node --test test/"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250726.0",
+    "typescript": "^5.6.0",
+    "wrangler": "4.58.0"
+  }
+}

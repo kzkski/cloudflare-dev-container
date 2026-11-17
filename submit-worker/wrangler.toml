@@ -1,0 +1,20 @@
+# 作品提出の受付 Worker。
+# 認証は Worker 自身が Cloudflare Access の JWT を検証して行うため、この Worker には Access アプリを設定しない。
+name = "hdsc2026-submit"
+main = "src/index.ts"
+compatibility_date = "2025-07-26"
+
+[observability]
+enabled = true
+
+[[r2_buckets]]
+binding = "SUBMISSIONS"
+bucket_name = "hdsc2026-submissions"
+
+[vars]
+# opencode-for-events と同じ Zero Trust 組織（チーム名）
+CF_ACCESS_TEAM_NAME = "data-sendai-platform"
+# 「opencode-for-events - Authenticated」Access アプリの Application Audience (AUD) Tag（秘密情報ではない）
+CF_ACCESS_AUD = "906586410483d11c3ff7c4612c3ef39f395858d4d6087d154f15007ccc0d4c01"
+# アーカイブ(.tar.gz) の上限バイト数（50MB）
+MAX_ARCHIVE_BYTES = "52428800"

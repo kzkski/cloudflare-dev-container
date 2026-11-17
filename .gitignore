@@ -1,0 +1,27 @@
+# ---- 秘密情報・認証情報（コミットしない・提出にも含めない） ----
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+auth.json
+*.pem
+*.key
+*.p12
+
+# opencode のプロジェクト設定（API キーなどが入ることがある）
+# ※ .opencode/ 全体は無視しない（/submit コマンドなど配布物が入っているため）
+opencode.json
+opencode.jsonc
+.opencode/auth.json
+.opencode/node_modules/
+
+# ---- 依存・生成物 ----
+node_modules/
+.wrangler/
+dist/
+
+# ---- 提出の予備手段で作られるアーカイブ ----
+submission-*.tar.gz
+
+# ---- OS・エディタ ----
+.DS_Store
