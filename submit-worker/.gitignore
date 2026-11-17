@@ -2,3 +2,6 @@ node_modules/
 .wrangler/
 .test-build/
 .dev.vars
+
+# download-all.mjs の保存先（提出物はコミットしない）
+submissions/

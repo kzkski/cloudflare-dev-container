@@ -25,9 +25,11 @@ Codespace                                   受付 Worker                       
 |----------------|------|
 | `POST /submit` | 提出。`Authorization: Bearer <JWT>` と multipart/form-data（`archive`: tar.gz、`SUBMISSION.md`、`GITHUB_USER`）が必要 |
 | `GET /health` | 疎通確認（`{"ok":true}`） |
+| `GET /admin/list` | **主催者のみ**。提出物の一覧（JSON、1000 件ごとにページング） |
+| `GET /admin/object?key=` | **主催者のみ**。指定したファイルの中身を取得 |
 
 成功時の応答: `{"ok":true,"id":"20261117T123456789Z","email":"...","key":"<email>/<時刻>.tar.gz","size":12345,"submittedAt":"..."}`
-失敗時の応答: `{"ok":false,"error":"日本語のメッセージ"}`（HTTP 400 / 401 / 413 / 500）
+失敗時の応答: `{"ok":false,"error":"日本語のメッセージ"}`（HTTP 400 / 401 / 403 / 413 / 500）
 
 ## 設定値（`wrangler.toml`）
 
@@ -36,6 +38,7 @@ Codespace                                   受付 Worker                       
 | `CF_ACCESS_TEAM_NAME` | `data-sendai-platform` | opencode-for-events と同じ Zero Trust チーム名 |
 | `CF_ACCESS_AUD` | （wrangler.toml 参照） | 「opencode-for-events - Authenticated」Access アプリの AUD Tag |
 | `MAX_ARCHIVE_BYTES` | `52428800` | アーカイブの上限（50MB） |
+| `ADMIN_EMAILS`（Secret） | （非公開） | 管理用 API を使える主催者のメールアドレス（カンマ区切り）。未設定だと誰も使えない |
 | `SUBMISSIONS`（R2 バインディング） | `hdsc2026-submissions` | 保存先バケット |
 
 ## 開発・デプロイ
@@ -63,48 +66,60 @@ hdsc2026-submissions/        ← バケット
     ...
 ```
 
-### 方法 1: rclone（推奨）
+### 方法 1: ダウンロードスクリプト（推奨・R2 のトークン不要）
 
-1. R2 の API トークンを作る: Cloudflare ダッシュボード → **R2** → **API** → **Manage API tokens** → **Create API token**。権限は **Object Read only**、対象バケットは `hdsc2026-submissions`。表示された **Access Key ID** と **Secret Access Key** を控える（再表示されない）。
-2. [rclone](https://rclone.org/install/) をインストールし、`rclone config` で設定する（または `~/.config/rclone/rclone.conf` に直接書く）。
+主催者だけが使える管理用 API（`/admin/list`、`/admin/object`）を Worker に用意してあります。ログインに使う Cloudflare Access のメールアドレスが、Worker の `ADMIN_EMAILS` に登録されている人だけが使えます。
 
-   ```ini
-   [r2]
-   type = s3
-   provider = Cloudflare
-   access_key_id = <Access Key ID>
-   secret_access_key = <Secret Access Key>
-   endpoint = https://<アカウントID>.r2.cloudflarestorage.com
-   acl = private
-   no_check_bucket = true
-   ```
+**初回だけ**: cloudflared をインストールする。
 
-3. 全員分をダウンロードする。
+```bash
+brew install cloudflared
+```
 
-   ```bash
-   rclone copy r2:hdsc2026-submissions ./submissions --progress
-   ```
+**ダウンロード**（`submit-worker` ディレクトリで実行）:
 
-4. すべての tar.gz をそれぞれのフォルダに展開する。
+```bash
+node scripts/download-all.mjs --extract
+```
 
-   ```bash
-   cd submissions
-   for f in */*.tar.gz; do
-     d="${f%.tar.gz}"
-     mkdir -p "$d"
-     tar -xzf "$f" -C "$d"
-   done
-   ```
+- 初回はブラウザが開くので、Cloudflare Access にログインする（ログインに使ったメールアドレスが主催者として登録されている必要があります）。
+- `./submissions/<メール>/<時刻>.tar.gz`（`--extract` を付けると同名のフォルダに展開）と `.md` が保存され、参加者ごとの最新の提出が一覧で表示されます。
+- 何度でも実行できます。保存済みのファイルはスキップされ、差分だけ取得します。
+- 保存先は `--out ./別のフォルダ` で変えられます。
+- opencode にログイン済みの環境（Codespace など）では、その認証情報が自動で使われます。環境変数 `O4E_TOKEN` に JWT を入れても使えます。
 
-5. 参加者ごとに最新の提出だけ確認したい場合:
+> 提出物は参加者が作った**信頼できないコード**です。展開しても、中身を確認せずに実行しないでください。
 
-   ```bash
-   for u in */; do ls -1 "$u"*.tar.gz | sort | tail -n 1; done
-   ```
+**主催者を追加・変更する**: `ADMIN_EMAILS` は Secret です（メールアドレスをリポジトリに残さないため）。カンマ区切りで指定します。
 
-### 方法 2: wrangler で 1 件ずつ取得
+```bash
+printf '%s' 'organizer1@example.com,organizer2@example.com' | npx wrangler secret put ADMIN_EMAILS
+```
 
-Wrangler 4.58 にはバケット内の一覧コマンドがないため、キーが分かっている個別のファイルだけ取れます（キーは提出時の応答の `key`、または Cloudflare ダッシュボードの R2 画面で確認できます）。
+### 方法 2: rclone（R2 の API トークンがある場合）
+
+管理者に、**Object Read only・`hdsc2026-submissions` 限定**の R2 API トークンを作ってもらい、[rclone](https://rclone.org/install/) で取得する方法です。
+
+```ini
+[r2]
+type = s3
+provider = Cloudflare
+access_key_id = <Access Key ID>
+secret_access_key = <Secret Access Key>
+endpoint = https://<アカウントID>.r2.cloudflarestorage.com
+acl = private
+no_check_bucket = true
+```
+
+```bash
+rclone copy r2:hdsc2026-submissions ./submissions --progress
+```
+
+管理者でなくても、自分のユーザートークン（権限: アカウント | Workers R2 Storage | 読み取り）から S3 互換の認証情報を作れます（Access Key ID＝トークンの ID、Secret＝トークン値の SHA-256）。ただし手順が煩雑なので、通常は方法 1 を使ってください。
+
+### 方法 3: wrangler で 1 件ずつ取得
+
+Wrangler 4.58 にはバケット内の一覧コマンドがないため、キーが分かっている個別のファイルだけ取れます（キーは Cloudflare ダッシュボードの R2 画面で確認できます）。
 
 ```bash
 npx wrangler r2 object get "hdsc2026-submissions/taro@example.com/20261117T031500123Z.tar.gz" \

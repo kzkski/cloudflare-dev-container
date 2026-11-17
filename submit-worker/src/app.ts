@@ -6,6 +6,8 @@ export interface Env {
   CF_ACCESS_TEAM_NAME: string;
   CF_ACCESS_AUD: string;
   MAX_ARCHIVE_BYTES?: string;
+  /** 主催者のメールアドレス（カンマ区切り）。Secret として設定する。未設定なら管理用 API は誰も使えない */
+  ADMIN_EMAILS?: string;
 }
 
 export type Verifier = (token: string, env: Env) => Promise<{ email: string }>;
@@ -48,12 +50,104 @@ async function readText(value: File | string | null): Promise<string | null> {
   return typeof value === "string" ? value : await value.text();
 }
 
+/** Authorization ヘッダの JWT を検証し、email を返す。失敗時はそのまま返せる Response を返す */
+async function authenticate(
+  request: Request,
+  env: Env,
+  verify: Verifier,
+): Promise<{ email: string } | Response> {
+  const authorization = request.headers.get("authorization") ?? "";
+  const match = /^Bearer\s+(.+)$/i.exec(authorization);
+  if (!match) {
+    return fail(401, "認証トークンがありません。opencode にログインし直してください");
+  }
+  try {
+    return { email: (await verify(match[1].trim(), env)).email };
+  } catch (e) {
+    if (e instanceof JwtError) {
+      console.error("JWT 検証失敗:", e.message);
+      return fail(401, `認証に失敗しました: ${e.message}。opencode auth login をやり直してください`);
+    }
+    console.error("JWT 検証中にエラー:", e instanceof Error ? e.message : e);
+    return fail(500, "認証の確認中にエラーが発生しました。しばらくしてからやり直してください");
+  }
+}
+
+function isAdmin(email: string, env: Env): boolean {
+  const admins = (env.ADMIN_EMAILS ?? "")
+    .split(/[,\s]+/)
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  return admins.includes(email.toLowerCase());
+}
+
+const ADMIN_LIST_LIMIT = 1000;
+const MAX_KEY_LENGTH = 1024;
+
+/** 主催者専用: 提出物の一覧（/admin/list）と取得（/admin/object?key=...） */
+async function handleAdmin(request: Request, env: Env, verify: Verifier, url: URL): Promise<Response> {
+  if (request.method !== "GET") {
+    return fail(405, "GET で呼び出してください");
+  }
+  const auth = await authenticate(request, env, verify);
+  if (auth instanceof Response) return auth;
+  if (!isAdmin(auth.email, env)) {
+    console.error(`管理用 API を拒否: ${auth.email}`);
+    return fail(403, "この操作は主催者のみ可能です");
+  }
+
+  try {
+    if (url.pathname === "/admin/list") {
+      const cursor = url.searchParams.get("cursor") || undefined;
+      const listed = await env.SUBMISSIONS.list({
+        limit: ADMIN_LIST_LIMIT,
+        cursor,
+        include: ["customMetadata"],
+      });
+      return json({
+        ok: true,
+        objects: listed.objects.map((o) => ({
+          key: o.key,
+          size: o.size,
+          uploaded: o.uploaded.toISOString(),
+          githubUser: o.customMetadata?.githubUser ?? "",
+        })),
+        truncated: listed.truncated,
+        cursor: listed.truncated ? listed.cursor : undefined,
+      });
+    }
+
+    // /admin/object
+    const key = url.searchParams.get("key") ?? "";
+    if (!key || key.length > MAX_KEY_LENGTH) {
+      return fail(400, "key を指定してください");
+    }
+    const object = await env.SUBMISSIONS.get(key);
+    if (object === null) {
+      return fail(404, "指定されたファイルが見つかりません");
+    }
+    return new Response(object.body, {
+      headers: {
+        "content-type": object.httpMetadata?.contentType ?? "application/octet-stream",
+        "content-length": String(object.size),
+        etag: object.httpEtag,
+      },
+    });
+  } catch (e) {
+    console.error("管理用 API でエラー:", e instanceof Error ? e.message : e);
+    return fail(500, "データの取得中にエラーが発生しました。しばらくしてからもう一度お試しください");
+  }
+}
+
 export function createHandler(verify: Verifier = defaultVerifier) {
   return async function handle(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
     if (url.pathname === "/health" && request.method === "GET") {
       return json({ ok: true });
+    }
+    if (url.pathname === "/admin/list" || url.pathname === "/admin/object") {
+      return handleAdmin(request, env, verify, url);
     }
     if (url.pathname !== "/submit") {
       return fail(404, "見つかりません");
@@ -63,22 +157,9 @@ export function createHandler(verify: Verifier = defaultVerifier) {
     }
 
     // ---- 認証 ----
-    const authorization = request.headers.get("authorization") ?? "";
-    const match = /^Bearer\s+(.+)$/i.exec(authorization);
-    if (!match) {
-      return fail(401, "認証トークンがありません。opencode にログインし直してください");
-    }
-    let email: string;
-    try {
-      email = (await verify(match[1].trim(), env)).email;
-    } catch (e) {
-      if (e instanceof JwtError) {
-        console.error("JWT 検証失敗:", e.message);
-        return fail(401, `認証に失敗しました: ${e.message}。opencode auth login をやり直してください`);
-      }
-      console.error("JWT 検証中にエラー:", e instanceof Error ? e.message : e);
-      return fail(500, "認証の確認中にエラーが発生しました。しばらくしてからやり直してください");
-    }
+    const auth = await authenticate(request, env, verify);
+    if (auth instanceof Response) return auth;
+    const email = auth.email;
 
     // ---- 受信 ----
     const maxArchive = Number(env.MAX_ARCHIVE_BYTES) || DEFAULT_MAX_ARCHIVE_BYTES;
