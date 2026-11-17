@@ -18,7 +18,7 @@ description: 作った作品を主催者に提出する（SUBMISSION.md を作�
    bash .devcontainer/submit.sh --dry-run
    ```
 
-   ※ 提出対象は「この Codespace を作成したあとに新しく追加されたファイル」だけ。`.env` や `node_modules` は自動で除外される。
+   ※ 提出対象は「この Codespace を作成したあとに新しく追加されたファイル」だけ。`git push` 済み・commit 済み・未コミットのどれでも対象になる。`.env` や `node_modules` は自動で除外される。実行すると、どの時点を基準にしたかが「提出の基準:」として表示される。
 
 2. 一覧にあるコードを実際に読み、次のことを **自分で把握する**（参加者には聞かない）。
    - 何ができるアプリか

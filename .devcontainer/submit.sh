@@ -3,22 +3,30 @@
 #
 # Codespace 作成後に「新しく追加されたファイルのみ」を tar.gz にまとめ、
 # opencode-for-events の認証トークン（Cloudflare Access の JWT）を使って受付 Worker に送信する。
+# push 済み・commit 済み・未コミットのどれでも、作成後に追加したファイルなら提出対象になる。
 #
 # 使い方:
 #   bash .devcontainer/submit.sh             # 提出する
 #   bash .devcontainer/submit.sh --dry-run   # 送信せず、対象ファイルの確認と tar.gz の作成だけ行う
 #
+# 提出の基準（この時点より後に追加されたファイルが対象）。次の優先順で決める:
+#   1. 環境変数 SUBMIT_BASE_REF（テスト用。コミットやブランチを指定する）
+#   2. .git/submit-base に記録された、Codespace 作成時点のコミット（setup.sh が作成時に記録）
+#   3. origin が kzkski/cloudflare-dev-container を指している場合は origin/main（記録が無い旧 Codespace 向け）
+#   4. 上記のどれでもなければ、リポジトリの最初のコミット（テンプレートから作ったリポジトリ向け）
+#
 # 環境変数（通常は設定不要。テスト用）:
-#   SUBMIT_URL        受付 Worker の URL
+#   SUBMIT_URL          受付 Worker の URL
 #   OPENCODE_AUTH_FILE  opencode の認証ファイル（既定: ~/.local/share/opencode/auth.json）
-#   SUBMIT_BASE_REF   「作成時点」とみなす基準（既定: origin/main）
+#   SUBMIT_BASE_REF     提出の基準にするコミット・ブランチ（上記 1。既定: 未設定）
 set -euo pipefail
 
 SUBMIT_URL="${SUBMIT_URL:-https://hdsc2026-submit.tokyo-odh-002.workers.dev/submit}"
 AUTH_FILE="${OPENCODE_AUTH_FILE:-${HOME}/.local/share/opencode/auth.json}"
 # auth.json の中でトークンを探すときに優先するキー
 AUTH_KEY="https://opencode-for-events.tokyo-odh-002.workers.dev"
-BASE_REF="${SUBMIT_BASE_REF:-origin/main}"
+BASE_REF=""
+BASE_DESC=""
 MAX_BYTES=$((50 * 1024 * 1024))
 MAX_LIST_LINES=100
 
@@ -36,7 +44,8 @@ for arg in "$@"; do
   case "${arg}" in
     --dry-run) DRY_RUN=1 ;;
     -h | --help)
-      sed -n '2,14p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      # 先頭のコメントブロック（2 行目から、コメントでない行の手前まで）をそのまま表示する
+      awk 'NR > 1 { if ($0 !~ /^#/) exit; sub(/^# ?/, ""); print }' "${BASH_SOURCE[0]}"
       exit 0
       ;;
     *) die "不明な引数です: ${arg}" ;;
@@ -48,8 +57,54 @@ for cmd in git tar curl node; do
 done
 
 git rev-parse --git-dir > /dev/null 2>&1 || die "${REPO_ROOT} は git リポジトリではありません"
-git rev-parse --verify -q "${BASE_REF}" > /dev/null \
-  || die "基準となる ${BASE_REF} が見つかりません。Codespace 上でこのスクリプトを実行しているか確認してください"
+
+# 提出の基準を決める（この基準より後に追加されたファイルが提出対象）。優先順は冒頭のコメントを参照
+resolve_base_ref() {
+  local git_dir recorded url root
+
+  # 1. 環境変数 SUBMIT_BASE_REF（テスト用）
+  if [ -n "${SUBMIT_BASE_REF:-}" ]; then
+    git rev-parse --verify -q "${SUBMIT_BASE_REF}^{commit}" > /dev/null \
+      || die "環境変数 SUBMIT_BASE_REF に指定された ${SUBMIT_BASE_REF} が見つかりません"
+    BASE_REF="${SUBMIT_BASE_REF}"
+    BASE_DESC="環境変数 SUBMIT_BASE_REF（${SUBMIT_BASE_REF}）"
+    return 0
+  fi
+
+  # 2. Codespace 作成時に setup.sh が記録したコミット
+  git_dir="$(git rev-parse --absolute-git-dir 2> /dev/null || true)"
+  if [ -n "${git_dir}" ] && [ -s "${git_dir}/submit-base" ]; then
+    recorded="$(head -n 1 "${git_dir}/submit-base" | tr -d '[:space:]')"
+    if [ -n "${recorded}" ] && git rev-parse --verify -q "${recorded}^{commit}" > /dev/null; then
+      BASE_REF="${recorded}"
+      BASE_DESC="Codespace 作成時のコミット（$(git rev-parse --short "${recorded}")）"
+      return 0
+    fi
+  fi
+
+  # 3. 記録が無い旧 Codespace（講師リポジトリから直接作ったもの）は origin/main
+  url="$(git remote get-url origin 2> /dev/null | tr '[:upper:]' '[:lower:]' || true)"
+  if [[ "${url}" == *kzkski/cloudflare-dev-container* ]] \
+    && git rev-parse --verify -q "origin/main^{commit}" > /dev/null; then
+    BASE_REF="origin/main"
+    BASE_DESC="講師リポジトリの origin/main"
+    return 0
+  fi
+
+  # 4. テンプレートから作ったリポジトリ: 最初のコミット（複数あれば最も古いもの）
+  root="$(git rev-list --max-parents=0 HEAD 2> /dev/null | tail -n 1 || true)"
+  if [ -n "${root}" ]; then
+    BASE_REF="${root}"
+    BASE_DESC="リポジトリの最初のコミット（$(git rev-parse --short "${root}")）"
+    return 0
+  fi
+
+  die "提出の基準となるコミットが見つかりません。.git/submit-base の記録も、origin/main も、最初のコミットもありません。コミットが 1 つ以上ある git リポジトリ（Codespace のワークスペース）で実行してください"
+}
+resolve_base_ref
+echo "提出の基準: ${BASE_DESC}"
+echo "  （この基準より後に追加されたファイルが提出対象です）"
+
 [ -f SUBMISSION.md ] || die "SUBMISSION.md がありません（${REPO_ROOT}/SUBMISSION.md）。アプリの説明を書いた SUBMISSION.md を作成してから、もう一度実行してください（opencode の /submit なら自動で作成します）"
 
 WORK_DIR="$(mktemp -d)"
