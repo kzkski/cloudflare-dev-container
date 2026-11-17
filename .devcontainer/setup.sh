@@ -27,8 +27,44 @@ try() {
 CKAN_MCP_BASE_URL="${CKAN_MCP_BASE_URL:-https://ckan-mcp-worker.kzkski.workers.dev}"
 CKAN_MCP_REMOTE_URL="${CKAN_MCP_BASE_URL%/}/mcp"
 
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# 作品提出の基準（Codespace 作成時点のコミット）を .git/submit-base に記録する。
+# submit.sh は、ここに記録したコミット以降に追加されたファイルを提出対象にする。
+#   - Rebuild Container では postCreateCommand が再実行されるが、/workspaces 配下（.git を含む）は残る。
+#     最初の記録を保つため、すでに記録があれば上書きしない。
+#   - git リポジトリでない・コミットがないなどで記録できなくても、setup 全体は止めない（常に 0 を返す）。
+record_submit_base() {
+  local root="${1:-.}" git_dir sha
+  git_dir="$(git -C "${root}" rev-parse --absolute-git-dir 2>/dev/null)" || {
+    detail "Not a git repository; skipped recording the submit base." \
+      "git リポジトリではないため、提出の基準の記録をスキップしました。"
+    return 0
+  }
+  if [ -s "${git_dir}/submit-base" ]; then
+    detail "Submit base already recorded (kept as is): $(head -n 1 "${git_dir}/submit-base")" \
+      "提出の基準は記録済みです（上書きしません）: $(head -n 1 "${git_dir}/submit-base")"
+    return 0
+  fi
+  sha="$(git -C "${root}" rev-parse --verify -q 'HEAD^{commit}' 2>/dev/null)" || {
+    detail "No commit found; skipped recording the submit base." \
+      "コミットがないため、提出の基準の記録をスキップしました。"
+    return 0
+  }
+  if { printf '%s\n' "${sha}" > "${git_dir}/submit-base"; } 2>/dev/null; then
+    detail "Recorded the submit base: ${sha}" "提出の基準を記録しました: ${sha}"
+  else
+    detail "WARN: could not write ${git_dir}/submit-base" \
+      "警告: ${git_dir}/submit-base に書き込めませんでした"
+  fi
+  return 0
+}
+
 echo "Starting devcontainer setup ($(date -u '+%Y-%m-%d %H:%M:%S UTC'))..."
 echo "devcontainer セットアップを開始します ($(date -u '+%Y-%m-%d %H:%M:%S UTC'))..."
+
+# 後続のインストールが失敗しても記録が残るよう、最初に行う
+record_submit_base "${REPO_ROOT}" || true
 
 log "Installing OpenCode..." "OpenCode をインストール中..."
 
