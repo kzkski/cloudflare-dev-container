@@ -1,0 +1,180 @@
+/* Leaflet CSS は index.html で CDN から読み込み済み */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Sans",
+    "Noto Sans JP", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #f0f0f0;
+}
+
+body {
+  overflow: hidden;
+}
+
+#root {
+  max-width: 430px;
+  margin: 0 auto;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+/* ヘッダー */
+.app-header {
+  height: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%);
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+/* 地図エリア */
+.map-area {
+  height: 60%;
+  flex-shrink: 0;
+  position: relative;
+  background: #e5e5e5;
+}
+
+.map-area .leaflet-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* 一覧エリア */
+.list-area {
+  flex: 1;
+  overflow-y: auto;
+  background: #ffffff;
+  border-top: 1px solid #e0e0e0;
+}
+
+.list-header {
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  background: #fafafa;
+  border-bottom: 1px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+/* スポットアイテム */
+.spot-item {
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.spot-item:active {
+  background: #f5f5f5;
+}
+
+.spot-summary {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.spot-marker-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.spot-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #222;
+}
+
+.spot-category {
+  font-size: 12px;
+  color: #888;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.spot-detail {
+  padding: 0 16px 12px 38px;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.6;
+}
+
+.spot-detail p {
+  margin-bottom: 4px;
+}
+
+/* ポップアップ */
+.popup-content h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #222;
+}
+
+.popup-content .popup-category {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: #666;
+}
+
+.popup-content .popup-hours {
+  margin: 0;
+  font-size: 13px;
+  color: #444;
+}
+
+/* エラーメッセージ */
+.error-message {
+  padding: 20px;
+  text-align: center;
+  color: #c62828;
+  font-size: 14px;
+}
+
+/* 地図エリア内のエラー */
+.map-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  z-index: 20;
+  padding: 20px;
+  text-align: center;
+  color: #c62828;
+  font-size: 14px;
+}
+
+/* ローディング */
+.loading {
+  padding: 20px;
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+}
